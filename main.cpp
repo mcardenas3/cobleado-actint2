@@ -42,8 +42,18 @@ private:
         return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
     }
 
-    bool bfs(vector<vector<int>>& rGraph, vector<vector<int>>& flow,
-             int source, int sink, vector<int>& parent) {
+    void printMatrix(const vector<vector<int>>& matrix, string title) {
+        cout << title << ":\n";
+        for(int i = 0; i < N; i++) {
+            for(int j = 0; j < N; j++) {
+                cout << matrix[i][j] << "\t";
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
+
+    bool bfs(vector<vector<int>>& rGraph, int source, int sink, vector<int>& parent) {
         vector<bool> visited(N, false);
         queue<int> q;
         q.push(source);
@@ -66,35 +76,41 @@ private:
 
     int fordFulkerson(vector<vector<int>>& graph, int source, int sink) {
         vector<vector<int>> rGraph = graph;
-        vector<vector<int>> flow(N, vector<int>(N, 0));
         int max_flow = 0;
+        int iteration = 1;
 
         while (true) {
             vector<int> parent(N, -1);
-            if (!bfs(rGraph, flow, source, sink, parent))
+            if (!bfs(rGraph, source, sink, parent))
                 break;
 
+            cout << "\nIteración " << iteration++ << ":\n";
+            printMatrix(rGraph, "Matriz residual actual");
+
             int path_flow = INT_MAX;
+            vector<int> path;
             for (int v = sink; v != source; v = parent[v]) {
                 int u = parent[v];
                 path_flow = min(path_flow, rGraph[u][v]);
+                path.push_back(v);
             }
+            path.push_back(source);
+            reverse(path.begin(), path.end());
+
+            cout << "Camino encontrado: ";
+            for (int i = 0; i < path.size(); i++) {
+                cout << char('A' + path[i]);
+                if (i < path.size() - 1) cout << " -> ";
+            }
+            cout << "\nFlujo en este camino: " << path_flow << endl;
 
             for (int v = sink; v != source; v = parent[v]) {
                 int u = parent[v];
                 rGraph[u][v] -= path_flow;
                 rGraph[v][u] += path_flow;
-                flow[u][v] += path_flow;
-                flow[v][u] -= path_flow;
             }
 
-            cout << "\nCamino encontrado con flujo " << path_flow << ":\n";
-            for (int v = sink; v != source; v = parent[v]) {
-                cout << char('A' + parent[v]) << " -> ";
-            }
-            cout << char('A' + sink) << endl;
-
-            max_flow = path_flow;
+            max_flow += path_flow;
         }
 
         return max_flow;
@@ -198,16 +214,11 @@ public:
 
     void calculateMaxFlow() {
         cout << "\n3. Flujo máximo (Ford-Fulkerson):\n";
-        cout << "Matriz de capacidades:\n";
-        for(int i = 0; i < N; i++) {
-            for(int j = 0; j < N; j++) {
-                cout << capacities[i][j] << " ";
-            }
-            cout << endl;
-        }
-
+        printMatrix(capacities, "Matriz de capacidades inicial");
+        
+        cout << "\nCalculando flujo máximo de A a D...\n";
         int maxFlow = fordFulkerson(capacities, 0, N-1);
-        cout << "\nFlujo máximo del nodo A al nodo D: " << maxFlow << endl;
+        cout << "\nFlujo máximo total: " << maxFlow << endl;
     }
 
     void generateVoronoiRegions() {
